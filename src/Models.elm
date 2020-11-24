@@ -37,7 +37,7 @@ planetString planet =
 signString: Sign -> String
 signString sign =
     case sign of
-        Aquarius -> "Aquaris"
+        Aquarius -> "Aquarius"
         Pisces -> "Pisces"
         Aries -> "Aries"
         Taurus -> "Taurus"
@@ -49,6 +49,23 @@ signString sign =
         Scorpio -> "Scorpio"
         Sagittarius -> "Sagittarius"
         Capricorn -> "Capricorn"
+
+signFromString: String -> Maybe Sign
+signFromString str =
+    case str of
+        "Aquarius" -> Just Aquarius
+        "Pisces" -> Just Pisces
+        "Aries" -> Just Aries
+        "Taurus" -> Just Taurus
+        "Gemini" -> Just Gemini
+        "Cancer" -> Just Cancer
+        "Leo" -> Just Leo
+        "Virgo" -> Just Virgo
+        "Libra" -> Just Libra
+        "Scorpio" -> Just Scorpio
+        "Sagittarius" -> Just Sagittarius
+        "Capricorn" -> Just Capricorn
+        _ -> Nothing
 
 personString: Person -> String
 personString person =

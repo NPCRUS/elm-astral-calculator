@@ -2,11 +2,12 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, button, div, option, p, select, span, table, td, text, th, tr)
+import Html.Attributes as Attributes exposing (selected)
 import List exposing (map, concat)
 import Models exposing (..)
 import Input.Number exposing (..)
-import Html.Events exposing (onClick)
-import Styles exposing (personInputContainerStyle, personInputTableStyle)
+import Html.Events exposing (onClick, onInput)
+import Styles exposing (calculateButtonStyle, calculateResultContainerStyle, parentContainerStyle, personInputContainerStyle, personInputTableStyle)
 
 -- MAIN
 
@@ -34,7 +35,7 @@ init =
     , personInput2 = List.map (\e -> defaultPersonInputLine e) planets }
 
 defaultPersonInputLine: Planet -> PersonInputLine
-defaultPersonInputLine planet = PersonInputLine planet 0 Aquarius 0
+defaultPersonInputLine planet = PersonInputLine planet 0 Capricorn 0
 
 
 -- UPDATE
@@ -43,6 +44,7 @@ type Msg =
     DegreeUpdate Person Planet Int
     | MinuteUpdate Person Planet Int
     | SignUpdate Person Planet Sign
+    | Calculate
 update : Msg -> Model -> Model
 update msg model =
     case msg of
@@ -50,7 +52,9 @@ update msg model =
             updateForPerson model person (\a -> handleDegreeUpdate a planet value)
         MinuteUpdate person planet value ->
             updateForPerson model  person (\a -> handleMinuteUpdate a planet value)
-        SignUpdate person planet sign -> model
+        SignUpdate person planet sign ->
+            updateForPerson model person (\a -> handleSignUpdate a planet sign)
+        Calculate -> model
 
 updateForPerson: Model -> Person -> (PersonInput -> PersonInput) -> Model
 updateForPerson model person updateFunc =
@@ -71,6 +75,10 @@ handleMinuteUpdate: PersonInput -> Planet -> Int -> PersonInput
 handleMinuteUpdate personInput planet value =
     updateForPlanet personInput planet (\a -> {a | minute = value})
 
+handleSignUpdate: PersonInput -> Planet -> Sign -> PersonInput
+handleSignUpdate personInput planet value =
+    updateForPlanet personInput planet (\a -> {a | sign = value})
+
 
 -- VIEW
 
@@ -80,9 +88,16 @@ handleIntInput int =
         Nothing -> 0
         Just v -> v
 
-signSelect: PersonInputLine -> Html Msg
-signSelect personInputLine =
-    select [] (List.map (\a -> option [] [text (signString a)]) signs)
+handleSignInput: Maybe Sign -> Sign -> Sign
+handleSignInput input fallback =
+    case input of
+        Just s -> s
+        Nothing -> fallback
+
+signSelect: PersonInputLine -> (Sign -> Msg) -> Html Msg
+signSelect personInputLine onSelect =
+    select [ onInput (\a -> onSelect (handleSignInput (signFromString a) personInputLine.sign)) ]
+    (List.map (\a -> option [ Attributes.selected (a == personInputLine.sign) ] [text (signString a)]) signs)
 
 numericInput: Int -> (Maybe Int -> Msg) -> Html Msg
 numericInput value onChange =
@@ -98,7 +113,7 @@ personInputLineView: PersonInputLine -> Person -> Html Msg
 personInputLineView personInputLine person =
     tr []
     [ td [] [text (planetString personInputLine.planet)]
-      , td [] [signSelect personInputLine]
+      , td [] [signSelect personInputLine (\a -> SignUpdate person personInputLine.planet a)]
       , td [] [numericInput personInputLine.degree (\a -> DegreeUpdate person personInputLine.planet (handleIntInput a))]
       , td [] [numericInput personInputLine.minute (\a -> MinuteUpdate person personInputLine.planet (handleIntInput a))]
     ]
@@ -114,14 +129,16 @@ personInputView personInput person =
               , th[] [text "Degree"]
               , th[] [text "Minute"]
               ]
-          ] ++  List.map (\a -> personInputLineView a person) personInput)]
+          ] ++ List.map (\a -> personInputLineView a person) personInput)]
 
 view: Model -> Html Msg
 view model =
-    div[]
+    div parentContainerStyle
     [ p [][ text "Synastry"]
     , div personInputContainerStyle
         [ div personInputTableStyle [(personInputView model.personInput1 Person1)]
         , div personInputTableStyle [(personInputView model.personInput2 Person2)]]
+    , button (calculateButtonStyle ++ [onClick Calculate]) [text "Calculate"]
+    , div calculateResultContainerStyle [text "Calculation result"]
     ]
 
