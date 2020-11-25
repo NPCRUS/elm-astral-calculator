@@ -2,8 +2,6 @@ module Models exposing (..)
 
 -- DEFINITIONS
 
-type Month = January | February | March | April | May | June | July | August | September | October | November | December
-
 type Element = Fire | Earth | Air | Water
 
 type Cross = Cardinal | Fixed | Mutable
@@ -13,6 +11,28 @@ type Planet = Sun | Moon | Mercury | Venus | Mars | Jupiter | Saturn | Pluto
 type Sign = Aquarius | Pisces | Aries | Taurus | Gemini | Cancer | Leo | Virgo | Libra | Scorpio | Sagittarius | Capricorn
 
 type Person = Person1 | Person2
+
+type Aspect = Connection | Trigon | Quadrature | Opposition | Sextile | NoMatch
+
+type alias ConstantRecord  =
+    { sign: Sign
+    , element: Element
+    , cross: Cross }
+
+calcConstants: List ConstantRecord
+calcConstants =
+    [ ConstantRecord Aries Fire Cardinal
+    , ConstantRecord Taurus Earth Fixed
+    , ConstantRecord Gemini Air Mutable
+    , ConstantRecord Cancer Water Cardinal
+    , ConstantRecord Leo Fire Fixed
+    , ConstantRecord Virgo Earth Mutable
+    , ConstantRecord Libra Air Cardinal
+    , ConstantRecord Scorpio Water Fixed
+    , ConstantRecord Sagittarius Fire Mutable
+    , ConstantRecord Capricorn Earth Cardinal
+    , ConstantRecord Aquarius Air Fixed
+    , ConstantRecord Pisces Water Mutable]
 
 -- HELPERS
 

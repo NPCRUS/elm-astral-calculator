@@ -25,17 +25,27 @@ type alias PersonInputLine =
 
 type alias PersonInput = List PersonInputLine
 
+type alias CalculationResultLine =
+    { planet: Planet
+    , aspect: Aspect }
+
+type alias CalculationResult =
+    { planet: Planet
+    , results: List CalculationResultLine }
+
 type alias Model =
     { personInput1: PersonInput
-    , personInput2: PersonInput }
+     , personInput2: PersonInput
+     , result: Maybe (List CalculationResult) }
 
 init : Model
 init =
     { personInput1 = List.map (\e -> defaultPersonInputLine e) planets
-    , personInput2 = List.map (\e -> defaultPersonInputLine e) planets }
+    , personInput2 = List.map (\e -> defaultPersonInputLine e) planets
+    , result = Nothing }
 
 defaultPersonInputLine: Planet -> PersonInputLine
-defaultPersonInputLine planet = PersonInputLine planet 0 Capricorn 0
+defaultPersonInputLine planet = PersonInputLine planet 0 Aquarius 0
 
 
 -- UPDATE
@@ -78,6 +88,10 @@ handleMinuteUpdate personInput planet value =
 handleSignUpdate: PersonInput -> Planet -> Sign -> PersonInput
 handleSignUpdate personInput planet value =
     updateForPlanet personInput planet (\a -> {a | sign = value})
+
+calculateResult: Model -> Model
+calculateResult model = model
+
 
 
 -- VIEW
