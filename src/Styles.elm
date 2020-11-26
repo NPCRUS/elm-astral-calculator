@@ -30,3 +30,7 @@ calculateResultContainerStyle =
     [ style "display" "flex"
     , style "margin-top" " 10px"]
 
+tableElemStyle: List (Attribute msg)
+tableElemStyle =
+    [ style "border" "1px dotted black"]
+

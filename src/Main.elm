@@ -1,13 +1,14 @@
 module Main exposing (..)
 
 import Browser
+import Debug exposing (log, toString)
 import Html exposing (Html, button, div, option, p, select, span, table, td, text, th, tr)
-import Html.Attributes as Attributes exposing (selected)
+import Html.Attributes as Attributes exposing (rowspan, selected)
 import List exposing (map, concat)
 import Models exposing (..)
 import Input.Number exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Styles exposing (calculateButtonStyle, calculateResultContainerStyle, parentContainerStyle, personInputContainerStyle, personInputTableStyle)
+import Styles exposing (calculateButtonStyle, calculateResultContainerStyle, parentContainerStyle, personInputContainerStyle, personInputTableStyle, tableElemStyle)
 
 -- MAIN
 
@@ -29,14 +30,16 @@ type alias CalculationResultLine =
     { planet: Planet
     , aspect: Aspect }
 
-type alias CalculationResult =
+type alias PlanetCalculationResult =
     { planet: Planet
     , results: List CalculationResultLine }
+
+type alias CalculationResult = Maybe (List PlanetCalculationResult)
 
 type alias Model =
     { personInput1: PersonInput
      , personInput2: PersonInput
-     , result: Maybe (List CalculationResult) }
+     , result: CalculationResult }
 
 init : Model
 init =
@@ -64,7 +67,7 @@ update msg model =
             updateForPerson model  person (\a -> handleMinuteUpdate a planet value)
         SignUpdate person planet sign ->
             updateForPerson model person (\a -> handleSignUpdate a planet sign)
-        Calculate -> model
+        Calculate -> updateForResult model calculateResult
 
 updateForPerson: Model -> Person -> (PersonInput -> PersonInput) -> Model
 updateForPerson model person updateFunc =
@@ -76,6 +79,10 @@ updateForPerson model person updateFunc =
 updateForPlanet: PersonInput -> Planet -> (PersonInputLine -> PersonInputLine) -> PersonInput
 updateForPlanet personInput planet updateFunc =
     List.map (\a -> if(a.planet == planet) then (updateFunc a) else a) personInput
+
+updateForResult: Model -> (Model -> CalculationResult) -> Model
+updateForResult model updateFunc =
+    { model | result = updateFunc model}
 
 handleDegreeUpdate: PersonInput -> Planet -> Int -> PersonInput
 handleDegreeUpdate personInput planet value =
@@ -89,9 +96,19 @@ handleSignUpdate: PersonInput -> Planet -> Sign -> PersonInput
 handleSignUpdate personInput planet value =
     updateForPlanet personInput planet (\a -> {a | sign = value})
 
-calculateResult: Model -> Model
-calculateResult model = model
+calculateResult: Model -> CalculationResult
+calculateResult model =
+    Just ( List.map
+            (\a ->
+                PlanetCalculationResult
+                a.planet
+                (List.map (\b -> (calculateRelation a b)) model.personInput2)
+            )
+            model.personInput1)
 
+calculateRelation: PersonInputLine -> PersonInputLine -> CalculationResultLine
+calculateRelation personInput1 personInput2 =
+    CalculationResultLine personInput2.planet Connection
 
 
 -- VIEW
@@ -145,6 +162,56 @@ personInputView personInput person =
               ]
           ] ++ List.map (\a -> personInputLineView a person) personInput)]
 
+simpleSynastrySecondaryFilter: Planet -> CalculationResultLine -> Bool
+simpleSynastrySecondaryFilter parentPlanet calcLine =
+    case parentPlanet of
+        Moon -> List.member calcLine.planet [Sun, Venus, Mercury, Mars]
+        Venus -> List.member calcLine.planet [Sun, Mars]
+        Mercury -> List.member calcLine.planet [Sun]
+        _ -> False
+
+
+
+maybeResultView: CalculationResult -> Html Msg
+maybeResultView result =
+    case result of
+        Nothing -> span [] [text "Press calculate to show result"]
+        Just value -> div []
+            [ resultView value "" [Moon, Venus, Mercury] simpleSynastrySecondaryFilter]
+
+resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Html Msg
+resultView list title mainPlanetFilter secondaryPlanetFilterFunc =
+    div []
+        [ span [] [text title]
+        , table tableElemStyle
+            (list
+                |> List.filter (filterByMainPlanet mainPlanetFilter)
+                |> List.map (\a ->
+                                a.results
+                                    |> List.filter (secondaryPlanetFilterFunc a.planet)
+                                    |> (\c -> List.indexedMap (\i line -> resultViewLine a.planet line i (List.length c)) c)
+                            )
+                |> List.foldr utilityFold []
+            )
+        ]
+
+filterByMainPlanet: (List Planet) -> PlanetCalculationResult -> Bool
+filterByMainPlanet list planetCalculation = List.member planetCalculation.planet list
+
+utilityFold: List (Html Msg) -> List(Html Msg) -> List(Html Msg)
+utilityFold a b = List.concat [a, b]
+
+resultViewLine: Planet -> CalculationResultLine -> Int -> Int -> Html Msg
+resultViewLine planet calcLine index length =
+    tr tableElemStyle
+        (
+            (if(index == 0) then
+               [ th ([rowspan length] ++ tableElemStyle) [text (planetString planet)] ]
+              else []) ++
+            [ td tableElemStyle [text (planetString calcLine.planet)]
+            , td tableElemStyle [text (aspectString calcLine.aspect)] ]
+        )
+
 view: Model -> Html Msg
 view model =
     div parentContainerStyle
@@ -153,6 +220,6 @@ view model =
         [ div personInputTableStyle [(personInputView model.personInput1 Person1)]
         , div personInputTableStyle [(personInputView model.personInput2 Person2)]]
     , button (calculateButtonStyle ++ [onClick Calculate]) [text "Calculate"]
-    , div calculateResultContainerStyle [text "Calculation result"]
+    , div calculateResultContainerStyle [ maybeResultView model.result ]
     ]
 

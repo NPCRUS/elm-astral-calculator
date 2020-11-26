@@ -12,7 +12,7 @@ type Sign = Aquarius | Pisces | Aries | Taurus | Gemini | Cancer | Leo | Virgo |
 
 type Person = Person1 | Person2
 
-type Aspect = Connection | Trigon | Quadrature | Opposition | Sextile | NoMatch
+type Aspect = Connection | Trigon | Quadrature | Opposition | Sextile | NoAspect
 
 type alias ConstantRecord  =
     { sign: Sign
@@ -92,3 +92,13 @@ personString person =
     case person of
         Person1 -> "Person1"
         Person2 -> "Person2"
+
+aspectString: Aspect -> String
+aspectString aspect =
+    case aspect of
+        Connection  -> "Connection"
+        Trigon -> "Trigon"
+        Quadrature -> "Quadrature"
+        Opposition -> "Opposition"
+        Sextile -> "Sextile"
+        NoAspect -> "No Aspect"
