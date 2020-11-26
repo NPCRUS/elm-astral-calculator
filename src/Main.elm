@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Debug exposing (log, toString)
-import Html exposing (Html, button, div, option, p, select, span, table, td, text, th, tr)
+import Html exposing (Html, button, div, h2, option, p, select, span, table, td, text, th, tr)
 import Html.Attributes as Attributes exposing (rowspan, selected)
 import List exposing (map, concat)
 import Models exposing (..)
@@ -162,14 +162,35 @@ personInputView personInput person =
               ]
           ] ++ List.map (\a -> personInputLineView a person) personInput)]
 
-simpleSynastrySecondaryFilter: Planet -> CalculationResultLine -> Bool
-simpleSynastrySecondaryFilter parentPlanet calcLine =
+complicatedSecondaryFilter: Planet -> CalculationResultLine -> Bool
+complicatedSecondaryFilter parentPlanet calcLine =
     case parentPlanet of
         Moon -> List.member calcLine.planet [Sun, Venus, Mercury, Mars]
         Venus -> List.member calcLine.planet [Sun, Mars]
         Mercury -> List.member calcLine.planet [Sun]
         _ -> False
 
+conflictSecondaryFilter: Planet -> CalculationResultLine -> Bool
+conflictSecondaryFilter parentPlanet calcLine =
+    case parentPlanet of
+        Pluto -> List.member calcLine.planet [Saturn, Jupiter, Mars]
+        Saturn -> List.member calcLine.planet [Pluto, Saturn, Jupiter, Mars]
+        Jupiter-> List.member calcLine.planet [Pluto, Saturn, Jupiter, Mars]
+        Mars -> List.member calcLine.planet [Pluto, Saturn, Jupiter, Mars]
+        _ -> False
+
+perspectiveSecondaryFilter: Planet -> CalculationResultLine -> Bool
+perspectiveSecondaryFilter parentPlanet calcLine =
+    case parentPlanet of
+        Sun -> List.member calcLine.planet [Jupiter, Saturn]
+        Moon -> List.member calcLine.planet [Jupiter, Saturn]
+        Saturn -> List.member calcLine.planet [Sun, Moon]
+        Jupiter -> List.member calcLine.planet [Sun, Moon]
+        _ -> False
+
+simpleSecondaryFilter: (List Planet) -> Planet -> CalculationResultLine -> Bool
+simpleSecondaryFilter list _ calcLine =
+    List.member calcLine.planet list
 
 
 maybeResultView: CalculationResult -> Html Msg
@@ -177,7 +198,15 @@ maybeResultView result =
     case result of
         Nothing -> span [] [text "Press calculate to show result"]
         Just value -> div []
-            [ resultView value "" [Moon, Venus, Mercury] simpleSynastrySecondaryFilter]
+            [ h2 [] [text "Simple Synastry"]
+            , resultView value "" [Moon, Venus, Mercury] complicatedSecondaryFilter
+            , h2 [] [text "Resonance"]
+            , resultView value "Physiology" [Sun, Mars] (simpleSecondaryFilter [Venus, Moon])
+            , resultView value "Gender" [Venus, Moon] (simpleSecondaryFilter [Sun, Mars])
+            , resultView value "Psychology" [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon])
+            , resultView value "Conflict" [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter
+            , resultView value "Perspective" [Sun, Venus, Moon] perspectiveSecondaryFilter
+            , resultView value "Contact" [Mercury] (simpleSecondaryFilter [Mercury])]
 
 resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Html Msg
 resultView list title mainPlanetFilter secondaryPlanetFilterFunc =
