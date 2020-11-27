@@ -6,7 +6,7 @@ type Element = Fire | Earth | Air | Water
 
 type Cross = Cardinal | Fixed | Mutable
 
-type Planet = Sun | Moon | Mercury | Venus | Mars | Jupiter | Saturn | Pluto
+type Planet = Sun | Moon | Mercury | Venus | Mars | Jupiter | Saturn | Uranus | Neptune | Pluto
 
 type Sign = Aquarius | Pisces | Aries | Taurus | Gemini | Cancer | Leo | Virgo | Libra | Scorpio | Sagittarius | Capricorn
 
@@ -37,10 +37,39 @@ calcConstants =
 -- HELPERS
 
 planets: List Planet
-planets = [ Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Pluto]
+planets = [ Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto]
 
 signs: List Sign
 signs = [ Aquarius, Pisces, Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn]
+
+matchSextileSign: Sign -> Sign -> Bool
+matchSextileSign sign1 sign2 =
+    case (sign1, sign2) of
+        (Pisces, Capricorn) -> True
+        (Pisces, Taurus) -> True
+        (Aries, Aquarius) -> True
+        (Aries, Gemini) -> True
+        (Taurus, Pisces) -> True
+        (Taurus, Cancer) -> True
+        (Gemini, Aries) -> True
+        (Gemini, Leo) -> True
+        (Cancer, Taurus) -> True
+        (Cancer, Virgo) -> True
+        (Leo, Gemini) -> True
+        (Leo, Libra) -> True
+        (Virgo, Cancer) -> True
+        (Virgo, Scorpio) -> True
+        (Libra, Leo) -> True
+        (Libra, Sagittarius) -> True
+        (Scorpio, Virgo) -> True
+        (Scorpio, Capricorn) -> True
+        (Sagittarius, Libra) -> True
+        (Sagittarius, Aquarius) -> True
+        (Capricorn, Scorpio) -> True
+        (Capricorn, Pisces) -> True
+        (Aquarius, Sagittarius) -> True
+        (Aquarius, Aries) -> True
+        (_, _) -> False
 
 planetString: Planet -> String
 planetString planet =
@@ -52,6 +81,8 @@ planetString planet =
         Mars -> "Mars"
         Jupiter -> "Jupiter"
         Saturn -> "Saturn"
+        Uranus -> "Uranus"
+        Neptune -> "Neptune"
         Pluto -> "Pluto"
 
 signString: Sign -> String

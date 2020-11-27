@@ -4,11 +4,13 @@ import Browser
 import Debug exposing (log, toString)
 import Html exposing (Html, button, div, h2, option, p, select, span, table, td, text, th, tr)
 import Html.Attributes as Attributes exposing (rowspan, selected)
-import List exposing (map, concat)
+import List exposing (concat, head, map)
+import List.Extra as List
 import Models exposing (..)
 import Input.Number exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Styles exposing (calculateButtonStyle, calculateResultContainerStyle, parentContainerStyle, personInputContainerStyle, personInputTableStyle, tableElemStyle)
+import Tuple exposing (first, second)
 
 -- MAIN
 
@@ -34,17 +36,23 @@ type alias PlanetCalculationResult =
     { planet: Planet
     , results: List CalculationResultLine }
 
-type alias CalculationResult = Maybe (List PlanetCalculationResult)
+type alias CalculationResult =
+    { simpleCalculationResult: List PlanetCalculationResult
+    , complicatedCalculationResult: List PlanetCalculationResult }
+
+type alias MaybeCalculationResult = Maybe CalculationResult
 
 type alias Model =
     { personInput1: PersonInput
      , personInput2: PersonInput
-     , result: CalculationResult }
+     , limit: Int
+     , result: MaybeCalculationResult }
 
 init : Model
 init =
     { personInput1 = List.map (\e -> defaultPersonInputLine e) planets
     , personInput2 = List.map (\e -> defaultPersonInputLine e) planets
+    , limit = 6
     , result = Nothing }
 
 defaultPersonInputLine: Planet -> PersonInputLine
@@ -80,7 +88,7 @@ updateForPlanet: PersonInput -> Planet -> (PersonInputLine -> PersonInputLine) -
 updateForPlanet personInput planet updateFunc =
     List.map (\a -> if(a.planet == planet) then (updateFunc a) else a) personInput
 
-updateForResult: Model -> (Model -> CalculationResult) -> Model
+updateForResult: Model -> (Model -> MaybeCalculationResult) -> Model
 updateForResult model updateFunc =
     { model | result = updateFunc model}
 
@@ -96,20 +104,99 @@ handleSignUpdate: PersonInput -> Planet -> Sign -> PersonInput
 handleSignUpdate personInput planet value =
     updateForPlanet personInput planet (\a -> {a | sign = value})
 
-calculateResult: Model -> CalculationResult
+calculateResult: Model -> MaybeCalculationResult
 calculateResult model =
-    Just ( List.map
-            (\a ->
-                PlanetCalculationResult
-                a.planet
-                (List.map (\b -> (calculateRelation a b)) model.personInput2)
-            )
-            model.personInput1)
+    Just (CalculationResult (calculateResultHelper model False) (calculateResultHelper model True))
 
-calculateRelation: PersonInputLine -> PersonInputLine -> CalculationResultLine
-calculateRelation personInput1 personInput2 =
-    CalculationResultLine personInput2.planet Connection
+calculateResultHelper: Model -> Bool -> (List PlanetCalculationResult)
+calculateResultHelper model withPrecision =
+    List.map
+        (\a ->
+            PlanetCalculationResult
+            a.planet
+            (List.map (\b ->
+                CalculationResultLine b.planet (calculateRelation a b (calculatePrecision withPrecision model.limit ))
+            ) model.personInput2)
+        )
+        model.personInput1
 
+calculateRelation: PersonInputLine -> PersonInputLine -> (PersonInputLine -> PersonInputLine -> Bool) -> Aspect
+calculateRelation personInput1 personInput2 withPrecision =
+    if((isConnection personInput1 personInput2) && (withPrecision personInput1 personInput2)) then
+        Connection
+    else if((isTrigon personInput1 personInput2) && (withPrecision personInput1 personInput2)) then
+        Trigon
+    else if((isOpposition personInput1 personInput2) && (withPrecision personInput1 personInput2)) then
+        Opposition
+    else if((isQuadrature personInput1 personInput2) && (withPrecision personInput1 personInput2)) then
+        Quadrature
+    else if((isSextile personInput1 personInput2) && (withPrecision personInput1 personInput2)) then
+        Sextile
+    else
+        NoAspect
+
+calculatePrecision: Bool -> Int -> PersonInputLine -> PersonInputLine -> Bool
+calculatePrecision withPrecision limit personInput1 personInput2 =
+    if(not withPrecision) then True
+    else
+        (toBaseDegree personInput1.degree - toBaseDegree personInput2.degree, personInput1.minute - personInput2.minute)
+            |> (\t -> (first t) + (second t // abs (second t)))
+            |> abs
+            |> (>=) limit
+
+test: Bool -> Int -> PersonInputLine -> PersonInputLine -> Int
+test withPrecision limit personInput1 personInput2 =
+    if(not withPrecision) then 0
+    else
+        (toBaseDegree personInput1.degree - toBaseDegree personInput2.degree, personInput1.minute - personInput2.minute)
+            |> (\t -> (first t) + (second t // abs (second t)))
+            |> abs
+
+toBaseDegree: Int -> Int
+toBaseDegree n = n - (n // 30 * 30)
+
+
+isConnection: PersonInputLine -> PersonInputLine -> Bool
+isConnection personInput1 personInput2 =
+    if(personInput1.sign == personInput2.sign) then True
+    else False
+
+isTrigon: PersonInputLine -> PersonInputLine -> Bool
+isTrigon personInput1 personInput2 =
+    calcConstants
+        |> List.filter (\a -> a.sign == personInput1.sign || a.sign == personInput2.sign)
+        |> List.map (\a -> toString a.element)
+        |> List.allDifferent
+        |> not
+
+isQuadrature: PersonInputLine -> PersonInputLine -> Bool
+isQuadrature personInput1 personInput2 =
+    calcConstants
+        |> List.filter (\a -> a.sign == personInput1.sign || a.sign == personInput2.sign)
+        |> List.map (\a -> toString a.cross)
+        |> List.allDifferent
+        |> not
+
+isOpposition: PersonInputLine -> PersonInputLine -> Bool
+isOpposition personInput1 personInput2 =
+    case (personInput1.sign, personInput2.sign) of
+        (Pisces, Virgo) -> True
+        (Virgo, Pisces) -> True
+        (Aries, Libra) -> True
+        (Libra, Aries) -> True
+        (Taurus, Scorpio) -> True
+        (Scorpio, Taurus) -> True
+        (Gemini, Sagittarius) -> True
+        (Sagittarius, Gemini) -> True
+        (Capricorn, Cancer) -> True
+        (Cancer, Capricorn) -> True
+        (Leo, Aquarius) -> True
+        (Aquarius, Leo) -> True
+        (_, _) -> False
+
+isSextile: PersonInputLine -> PersonInputLine -> Bool
+isSextile personInput1 personInput2 =
+    matchSextileSign personInput1.sign personInput2.sign
 
 -- VIEW
 
@@ -193,20 +280,20 @@ simpleSecondaryFilter list _ calcLine =
     List.member calcLine.planet list
 
 
-maybeResultView: CalculationResult -> Html Msg
+maybeResultView: MaybeCalculationResult -> Html Msg
 maybeResultView result =
     case result of
         Nothing -> span [] [text "Press calculate to show result"]
         Just value -> div []
             [ h2 [] [text "Simple Synastry"]
-            , resultView value "" [Moon, Venus, Mercury] complicatedSecondaryFilter
+            , resultView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter
             , h2 [] [text "Resonance"]
-            , resultView value "Physiology" [Sun, Mars] (simpleSecondaryFilter [Venus, Moon])
-            , resultView value "Gender" [Venus, Moon] (simpleSecondaryFilter [Sun, Mars])
-            , resultView value "Psychology" [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon])
-            , resultView value "Conflict" [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter
-            , resultView value "Perspective" [Sun, Venus, Moon] perspectiveSecondaryFilter
-            , resultView value "Contact" [Mercury] (simpleSecondaryFilter [Mercury])]
+            , resultView value.complicatedCalculationResult "Physiology" [Sun, Mars] (simpleSecondaryFilter [Venus, Moon])
+            , resultView value.complicatedCalculationResult "Gender" [Venus, Moon] (simpleSecondaryFilter [Sun, Mars])
+            , resultView value.complicatedCalculationResult "Psychology" [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon])
+            , resultView value.complicatedCalculationResult "Conflict" [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter
+            , resultView value.complicatedCalculationResult "Perspective" [Sun, Venus, Moon] perspectiveSecondaryFilter
+            , resultView value.complicatedCalculationResult "Contact" [Mercury] (simpleSecondaryFilter [Mercury])]
 
 resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Html Msg
 resultView list title mainPlanetFilter secondaryPlanetFilterFunc =
