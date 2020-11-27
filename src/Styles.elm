@@ -34,3 +34,8 @@ tableElemStyle: List (Attribute msg)
 tableElemStyle =
     [ style "border" "1px dotted black"]
 
+tableSecondaryStyle: List (Attribute msg)
+tableSecondaryStyle =
+    [ style "border" "1px dotted black"
+    , style "width" "100px"]
+
