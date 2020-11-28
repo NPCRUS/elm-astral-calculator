@@ -1,2 +1,4 @@
 .idea
 elm-stuff
+out
+node_modules

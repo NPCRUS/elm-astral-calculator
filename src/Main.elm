@@ -1,15 +1,14 @@
 module Main exposing (..)
 
 import Browser
-import Debug exposing (log, toString)
-import Html exposing (Html, button, div, h2, option, p, select, span, table, td, text, th, tr)
-import Html.Attributes as Attributes exposing (rowspan, selected)
-import List exposing (concat, head, map)
+import Debug exposing (toString)
+import Html exposing (..)
+import Html.Attributes as Attributes exposing (rowspan)
 import List.Extra as List
 import Models exposing (..)
 import Input.Number exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Styles exposing (calculateButtonStyle, calculateResultContainerStyle, parentContainerStyle, personInputContainerStyle, personInputTableStyle, tableElemStyle)
+import Styles exposing (..)
 import Tuple exposing (first, second)
 
 -- MAIN
@@ -144,17 +143,8 @@ calculatePrecision withPrecision limit personInput1 personInput2 =
             |> abs
             |> (>=) limit
 
-test: Bool -> Int -> PersonInputLine -> PersonInputLine -> Int
-test withPrecision limit personInput1 personInput2 =
-    if(not withPrecision) then 0
-    else
-        (toBaseDegree personInput1.degree - toBaseDegree personInput2.degree, personInput1.minute - personInput2.minute)
-            |> (\t -> (first t) + (second t // abs (second t)))
-            |> abs
-
 toBaseDegree: Int -> Int
 toBaseDegree n = n - (n // 30 * 30)
-
 
 isConnection: PersonInputLine -> PersonInputLine -> Bool
 isConnection personInput1 personInput2 =
@@ -322,10 +312,10 @@ resultViewLine planet calcLine index length =
     tr tableElemStyle
         (
             (if(index == 0) then
-               [ th ([rowspan length] ++ tableElemStyle) [text (planetString planet)] ]
+               [ th ([rowspan length] ++ tableSecondaryStyle) [text (planetString planet)] ]
               else []) ++
-            [ td tableElemStyle [text (planetString calcLine.planet)]
-            , td tableElemStyle [text (aspectString calcLine.aspect)] ]
+            [ td tableSecondaryStyle [text (planetString calcLine.planet)]
+            , td tableSecondaryStyle [text (aspectString calcLine.aspect)] ]
         )
 
 view: Model -> Html Msg
