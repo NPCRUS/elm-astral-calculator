@@ -14,6 +14,8 @@ type Person = Person1 | Person2
 
 type Aspect = Connection | Trigon | Quadrature | Opposition | Sextile | NoAspect
 
+type Language = Eng | Ru
+
 type alias ConstantRecord  =
     { sign: Sign
     , element: Element

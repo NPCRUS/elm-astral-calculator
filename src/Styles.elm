@@ -48,3 +48,7 @@ toolbarContainerStyle =
     , style "height" "25px"
     , style "margin-bottom" "10px"]
 
+toolbarRowStyle: List (Attribute msg)
+toolbarRowStyle =
+    [ style "margin-right" "10px"]
+

@@ -46,6 +46,7 @@ type alias Model =
     { personInput1: PersonInput
      , personInput2: PersonInput
      , limit: Int
+     , language: Language
      , result: MaybeCalculationResult }
 
 init : Model
@@ -53,6 +54,7 @@ init =
     { personInput1 = List.map (\e -> defaultPersonInputLine e) planets
     , personInput2 = List.map (\e -> defaultPersonInputLine e) planets
     , limit = 6
+    , language = Eng
     , result = Nothing }
 
 defaultPersonInputLine: Planet -> PersonInputLine
@@ -328,7 +330,7 @@ toolbarView model =
 
 limitSelectionView: Int -> Html Msg
 limitSelectionView limit =
-    div [] [
+    div toolbarRowStyle [
         label [] [text "Limit:"]
         , select [ onInput (\a -> LimitUpdate (handleIntInput (toInt a))) ]
             (List.map (\a -> option [Attributes.selected (a == limit)][text (toString a)]) limitDistribution) ]
