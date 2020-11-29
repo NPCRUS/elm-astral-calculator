@@ -42,10 +42,13 @@ limitDistribution = [5, 6, 7]
 -- HELPERS
 
 planets: List Planet
-planets = [ Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto]
+planets = [Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto]
 
 signs: List Sign
-signs = [ Aquarius, Pisces, Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn]
+signs = [Aquarius, Pisces, Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn]
+
+languages: List Language
+languages = [Eng, Ru]
 
 matchSextileSign: Sign -> Sign -> Bool
 matchSextileSign sign1 sign2 =
@@ -76,36 +79,6 @@ matchSextileSign sign1 sign2 =
         (Aquarius, Aries) -> True
         (_, _) -> False
 
-planetString: Planet -> String
-planetString planet =
-    case planet of
-        Sun -> "Sun"
-        Moon -> "Moon"
-        Mercury -> "Mercury"
-        Venus -> "Venus"
-        Mars -> "Mars"
-        Jupiter -> "Jupiter"
-        Saturn -> "Saturn"
-        Uranus -> "Uranus"
-        Neptune -> "Neptune"
-        Pluto -> "Pluto"
-
-signString: Sign -> String
-signString sign =
-    case sign of
-        Aquarius -> "Aquarius"
-        Pisces -> "Pisces"
-        Aries -> "Aries"
-        Taurus -> "Taurus"
-        Gemini -> "Gemini"
-        Cancer -> "Cancer"
-        Leo -> "Leo"
-        Virgo -> "Virgo"
-        Libra -> "Libra"
-        Scorpio -> "Scorpio"
-        Sagittarius -> "Sagittarius"
-        Capricorn -> "Capricorn"
-
 signFromString: String -> Maybe Sign
 signFromString str =
     case str of
@@ -123,18 +96,9 @@ signFromString str =
         "Capricorn" -> Just Capricorn
         _ -> Nothing
 
-personString: Person -> String
-personString person =
-    case person of
-        Person1 -> "Person1"
-        Person2 -> "Person2"
-
-aspectString: Aspect -> String
-aspectString aspect =
-    case aspect of
-        Connection  -> "Connection"
-        Trigon -> "Trigon"
-        Quadrature -> "Quadrature"
-        Opposition -> "Opposition"
-        Sextile -> "Sextile"
-        NoAspect -> ""
+languageFromString: String -> Maybe Language
+languageFromString str =
+    case str of
+        "Eng" -> Just Eng
+        "Ru" -> Just Ru
+        _ -> Nothing
