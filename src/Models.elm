@@ -34,6 +34,9 @@ calcConstants =
     , ConstantRecord Aquarius Air Fixed
     , ConstantRecord Pisces Water Mutable]
 
+limitDistribution: List Int
+limitDistribution = [5, 6, 7]
+
 -- HELPERS
 
 planets: List Planet
@@ -132,4 +135,4 @@ aspectString aspect =
         Quadrature -> "Quadrature"
         Opposition -> "Opposition"
         Sextile -> "Sextile"
-        NoAspect -> "No Aspect"
+        NoAspect -> ""

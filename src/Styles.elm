@@ -17,7 +17,8 @@ parentContainerStyle: List (Attribute msg)
 parentContainerStyle =
     [ style "display" "flex"
     , style "flex-direction" "column"
-    , style "width" "800px"]
+    , style "width" "800px"
+    , style "margin" "2px"]
 
 calculateButtonStyle: List (Attribute msg)
 calculateButtonStyle =
@@ -38,4 +39,12 @@ tableSecondaryStyle: List (Attribute msg)
 tableSecondaryStyle =
     [ style "border" "1px dotted black"
     , style "width" "100px"]
+
+toolbarContainerStyle: List (Attribute msg)
+toolbarContainerStyle =
+    [ style "border-bottom" "1px solid black"
+    , style "border-right" "1px solid black"
+    , style "display" "flex"
+    , style "height" "25px"
+    , style "margin-bottom" "10px"]
 

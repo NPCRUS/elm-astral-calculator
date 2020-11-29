@@ -8,6 +8,7 @@ import List.Extra as List
 import Models exposing (..)
 import Input.Number exposing (..)
 import Html.Events exposing (onClick, onInput)
+import String exposing (toInt)
 import Styles exposing (..)
 import Tuple exposing (first, second)
 
@@ -64,6 +65,7 @@ type Msg =
     DegreeUpdate Person Planet Int
     | MinuteUpdate Person Planet Int
     | SignUpdate Person Planet Sign
+    | LimitUpdate Int
     | Calculate
 update : Msg -> Model -> Model
 update msg model =
@@ -74,6 +76,7 @@ update msg model =
             updateForPerson model  person (\a -> handleMinuteUpdate a planet value)
         SignUpdate person planet sign ->
             updateForPerson model person (\a -> handleSignUpdate a planet sign)
+        LimitUpdate value -> {model | limit = value}
         Calculate -> updateForResult model calculateResult
 
 updateForPerson: Model -> Person -> (PersonInput -> PersonInput) -> Model
@@ -275,9 +278,9 @@ maybeResultView result =
     case result of
         Nothing -> span [] [text "Press calculate to show result"]
         Just value -> div []
-            [ h2 [] [text "Simple Synastry"]
+            [ h2 [] [text "Simple Synastry:"]
             , resultView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter
-            , h2 [] [text "Resonance"]
+            , h2 [] [text "Resonance:"]
             , resultView value.complicatedCalculationResult "Physiology" [Sun, Mars] (simpleSecondaryFilter [Venus, Moon])
             , resultView value.complicatedCalculationResult "Gender" [Venus, Moon] (simpleSecondaryFilter [Sun, Mars])
             , resultView value.complicatedCalculationResult "Psychology" [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon])
@@ -288,7 +291,7 @@ maybeResultView result =
 resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Html Msg
 resultView list title mainPlanetFilter secondaryPlanetFilterFunc =
     div []
-        [ span [] [text title]
+        [ h4 [] [text title]
         , table tableElemStyle
             (list
                 |> List.filter (filterByMainPlanet mainPlanetFilter)
@@ -318,10 +321,22 @@ resultViewLine planet calcLine index length =
             , td tableSecondaryStyle [text (aspectString calcLine.aspect)] ]
         )
 
+toolbarView: Model -> Html Msg
+toolbarView model =
+    div toolbarContainerStyle
+        [ limitSelectionView model.limit]
+
+limitSelectionView: Int -> Html Msg
+limitSelectionView limit =
+    div [] [
+        label [] [text "Limit:"]
+        , select [ onInput (\a -> LimitUpdate (handleIntInput (toInt a))) ]
+            (List.map (\a -> option [Attributes.selected (a == limit)][text (toString a)]) limitDistribution) ]
+
 view: Model -> Html Msg
 view model =
     div parentContainerStyle
-    [ p [][ text "Synastry"]
+    [ toolbarView model
     , div personInputContainerStyle
         [ div personInputTableStyle [(personInputView model.personInput1 Person1)]
         , div personInputTableStyle [(personInputView model.personInput2 Person2)]]
