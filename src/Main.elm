@@ -222,13 +222,13 @@ signSelect personInputLine onSelect trans =
     (List.map (\a -> option [ Attributes.selected (a == personInputLine.sign), Attributes.value (toString a) ]
         [text (a |> toString |> trans)]) signs)
 
-numericInput: Int -> (Maybe Int -> Msg) -> Html Msg
-numericInput value onChange =
+numericInput: Int -> Int -> (Maybe Int -> Msg) -> Html Msg
+numericInput value maxValue onChange =
     Input.Number.input
       { onInput = onChange
       , maxLength = Nothing
       , minValue = Just 0
-      , maxValue = Just 360
+      , maxValue = Just maxValue
       , hasFocus = Nothing} [] (Just value)
 
 
@@ -237,8 +237,8 @@ personInputLineView personInputLine person trans =
     tr []
     [ td [] [text (personInputLine.planet |> toString |> trans)]
       , td [] [signSelect personInputLine (\a -> SignUpdate person personInputLine.planet a) trans]
-      , td [] [numericInput personInputLine.degree (\a -> DegreeUpdate person personInputLine.planet (handleIntInput a))]
-      , td [] [numericInput personInputLine.minute (\a -> MinuteUpdate person personInputLine.planet (handleIntInput a))]
+      , td [] [numericInput personInputLine.degree 30 (\a -> DegreeUpdate person personInputLine.planet (handleIntInput a))]
+      , td [] [numericInput personInputLine.minute 60 (\a -> MinuteUpdate person personInputLine.planet (handleIntInput a))]
     ]
 
 personInputView: PersonInput -> Person -> Translate -> Html Msg

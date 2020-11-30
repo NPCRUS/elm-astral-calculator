@@ -24,7 +24,7 @@ translateToRussian str =
         "Sun" -> "Солнце"
         "Moon" -> "Луна"
         "Mercury" -> "Меркурий"
-        "Venus" -> "Верена"
+        "Venus" -> "Венера"
         "Mars" -> "Марс"
         "Jupiter" -> "Юпитер"
         "Saturn" -> "Сатурн"
