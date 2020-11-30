@@ -48,6 +48,7 @@ translateToRussian str =
         "Resonance" -> "Резонанс"
         "Physiology" -> "Физиология"
         "Gender" -> "Гендер"
+        "Psychology" -> "Психология"
         "Conflict" -> "Конфликтность"
         "Perspective" -> "Перспектива"
         "Contact" -> "Контактность"

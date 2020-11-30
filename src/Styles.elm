@@ -20,6 +20,11 @@ parentContainerStyle =
     , style "width" "800px"
     , style "margin" "2px"]
 
+noPrintContainerStyle: List (Attribute msg)
+noPrintContainerStyle =
+    [ style "display" "flex"
+    , style "flex-direction" "column"]
+
 calculateButtonStyle: List (Attribute msg)
 calculateButtonStyle =
     [ style "margin-top" "10px"
@@ -29,15 +34,22 @@ calculateButtonStyle =
 calculateResultContainerStyle: List (Attribute msg)
 calculateResultContainerStyle =
     [ style "display" "flex"
+    , style "justify-content" "space-around"
     , style "margin-top" " 10px"]
+
+calculateResultRowStyle: List (Attribute msg)
+calculateResultRowStyle =
+    [ style "display" "flex"
+    , style "flex-direction" "column"]
 
 tableElemStyle: List (Attribute msg)
 tableElemStyle =
-    [ style "border" "1px dotted black"]
+    [ style "border" "1px solid black"
+    , style "border-collapse" "collapse"]
 
 tableSecondaryStyle: List (Attribute msg)
 tableSecondaryStyle =
-    [ style "border" "1px dotted black"
+    [ style "border" "1px solid black"
     , style "width" "100px"]
 
 toolbarContainerStyle: List (Attribute msg)

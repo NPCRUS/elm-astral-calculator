@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Debug exposing (toString)
 import Html exposing (..)
-import Html.Attributes as Attributes exposing (rowspan)
+import Html.Attributes as Attributes exposing (id, rowspan)
 import List.Extra as List
 import Models exposing (..)
 import Input.Number exposing (..)
@@ -285,20 +285,21 @@ simpleSecondaryFilter list _ calcLine =
     List.member calcLine.planet list
 
 
-maybeResultView: MaybeCalculationResult -> Translate -> Html Msg
+maybeResultView: MaybeCalculationResult -> Translate -> List (Html Msg)
 maybeResultView result trans =
     case result of
-        Nothing -> span [] [text (trans "Press calculate to show result")]
-        Just value -> div []
-            [ h2 [] [text (trans "Simple Synastry")]
-            , resultView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter trans
-            , h2 [] [text (trans "Resonance")]
-            , resultView value.complicatedCalculationResult (trans "Physiology") [Sun, Mars] (simpleSecondaryFilter [Venus, Moon]) trans
-            , resultView value.complicatedCalculationResult (trans "Gender") [Venus, Moon] (simpleSecondaryFilter [Sun, Mars]) trans
-            , resultView value.complicatedCalculationResult (trans "Psychology") [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon]) trans
-            , resultView value.complicatedCalculationResult (trans "Conflict") [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter trans
+        Nothing -> [span [] [text (trans "Press calculate to show result")]]
+        Just value ->
+            [ div calculateResultRowStyle [
+                h2 [] [text (trans "Simple Synastry")]
+                , resultView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter trans
+                , h2 [] [text (trans "Resonance")]
+                , resultView value.complicatedCalculationResult (trans "Physiology") [Sun, Mars] (simpleSecondaryFilter [Venus, Moon]) trans
+                , resultView value.complicatedCalculationResult (trans "Gender") [Venus, Moon] (simpleSecondaryFilter [Sun, Mars]) trans
+                , resultView value.complicatedCalculationResult (trans "Psychology") [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon]) trans ]
+            , div calculateResultRowStyle [resultView value.complicatedCalculationResult (trans "Conflict") [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter trans
             , resultView value.complicatedCalculationResult (trans "Perspective") [Sun, Venus, Moon] perspectiveSecondaryFilter trans
-            , resultView value.complicatedCalculationResult (trans "Contact") [Mercury] (simpleSecondaryFilter [Mercury]) trans]
+            , resultView value.complicatedCalculationResult (trans "Contact") [Mercury] (simpleSecondaryFilter [Mercury]) trans] ]
 
 resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Translate -> Html Msg
 resultView list title mainPlanetFilter secondaryPlanetFilterFunc trans =
@@ -361,11 +362,11 @@ view model =
         translateFunc = trans model.language
     in
     div parentContainerStyle
-    [ toolbarView model translateFunc
+    [ div (noPrintContainerStyle ++ [id "no-print"]) [toolbarView model translateFunc
     , div personInputContainerStyle
         [ div personInputTableStyle [(personInputView model.personInput1 Person1 translateFunc)]
         , div personInputTableStyle [(personInputView model.personInput2 Person2 translateFunc)]]
-    , button (calculateButtonStyle ++ [onClick Calculate]) [text (translateFunc "Calculate")]
-    , div calculateResultContainerStyle [ maybeResultView model.result translateFunc ]
+    , button (calculateButtonStyle ++ [onClick Calculate]) [text (translateFunc "Calculate")]]
+    , div calculateResultContainerStyle (maybeResultView model.result translateFunc)
     ]
 
