@@ -62,4 +62,7 @@ translateToRussian str =
         "Language" -> "Язык"
         "Eng" -> "Английский"
         "Ru" -> "Русский"
+        "Name" -> "ФИО"
+        "Birthday" -> "День рождения"
+        "Birthplace" -> "Место рождения"
         _ -> "Не переведено!"

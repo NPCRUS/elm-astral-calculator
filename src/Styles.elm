@@ -17,8 +17,7 @@ parentContainerStyle: List (Attribute msg)
 parentContainerStyle =
     [ style "display" "flex"
     , style "flex-direction" "column"
-    , style "width" "800px"
-    , style "margin" "2px"]
+    , style "margin" "5px 0"]
 
 noPrintContainerStyle: List (Attribute msg)
 noPrintContainerStyle =
@@ -34,13 +33,8 @@ calculateButtonStyle =
 calculateResultContainerStyle: List (Attribute msg)
 calculateResultContainerStyle =
     [ style "display" "flex"
-    , style "justify-content" "space-around"
+    , style "flex-direction" "column"
     , style "margin-top" " 10px"]
-
-calculateResultRowStyle: List (Attribute msg)
-calculateResultRowStyle =
-    [ style "display" "flex"
-    , style "flex-direction" "column"]
 
 tableElemStyle: List (Attribute msg)
 tableElemStyle =
@@ -55,7 +49,6 @@ tableSecondaryStyle =
 toolbarContainerStyle: List (Attribute msg)
 toolbarContainerStyle =
     [ style "border-bottom" "1px solid black"
-    , style "border-right" "1px solid black"
     , style "display" "flex"
     , style "height" "25px"
     , style "margin-bottom" "10px"]
@@ -63,4 +56,39 @@ toolbarContainerStyle =
 toolbarRowStyle: List (Attribute msg)
 toolbarRowStyle =
     [ style "margin-right" "10px"]
+
+displayFlex: Attribute msg
+displayFlex =
+    style "display" "flex"
+
+flexColumn: List (Attribute msg)
+flexColumn =
+    [ displayFlex
+    , style "flex-direction" "column" ]
+
+flexSpaceAround: List (Attribute msg)
+flexSpaceAround =
+    [ displayFlex
+    , style "justify-content" "space-around"]
+
+marginTop: String -> Attribute msg
+marginTop margin =
+    style "margin-top" margin
+
+alignItems: String -> Attribute msg
+alignItems align =
+    style "align-items" align
+
+personHeaderViewStyle: List (Attribute msg)
+personHeaderViewStyle =
+    (marginTop "20px") :: (alignItems "center") :: flexSpaceAround
+
+inputTableStyle: List (Attribute msg)
+inputTableStyle =
+    [ style "width" "330px"
+    , style "align-self" "center"]
+
+marginLeft: String -> Attribute msg
+marginLeft margin =
+    style "margin-left" margin
 

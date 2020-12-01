@@ -19,6 +19,10 @@ const pdfOptions = {
   scaleFactor: 50
 }
 
+function addOnlyPrintNotDisplayed(content) {
+  content.insertCSS('.only-print {display: none !important}')
+}
+
 async function saveDialog() {
   try {
     const result = await dialog.showSaveDialog({
@@ -30,10 +34,13 @@ async function saveDialog() {
     })
 
     const content = BrowserWindow.getFocusedWindow().webContents
-    if(!result.cancelled) {
-        const cssId = await content.insertCSS('#no-print {display: none !important}')
+    if(!result.canceled) {
+        const cssIds = await Promise.all([
+          content.insertCSS('#no-print {display: none !important}'),
+          content.insertCSS('.only-print {display: block !important}')
+        ])
         const data = await content.printToPDF({})
-        content.removeInsertedCSS(cssId)
+        cssIds.map(id => content.removeInsertedCSS(id))
         await writeFile(data, result.filePath)
     }
   } catch (ex) {

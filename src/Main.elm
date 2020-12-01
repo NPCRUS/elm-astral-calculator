@@ -3,12 +3,12 @@ module Main exposing (..)
 import Browser
 import Debug exposing (toString)
 import Html exposing (..)
-import Html.Attributes as Attributes exposing (id, rowspan)
+import Html.Attributes as Attributes exposing (class, id, rowspan, value)
 import List.Extra as List
 import Models exposing (..)
-import Input.Number exposing (..)
+import Input.Number as ExtraInput exposing (..)
 import Html.Events exposing (onClick, onInput)
-import String exposing (concat, toInt)
+import String exposing (toInt)
 import Styles exposing (..)
 import Translations exposing (Translate, trans)
 import Tuple exposing (first, second)
@@ -27,7 +27,11 @@ type alias PersonInputLine =
     , sign: Sign
     , minute: Int }
 
-type alias PersonInput = List PersonInputLine
+type alias PersonInput =
+    { name: String
+    , birthDate: String
+    , birthPlace: String
+    , values: List PersonInputLine }
 
 type alias CalculationResultLine =
     { planet: Planet
@@ -41,7 +45,11 @@ type alias CalculationResult =
     { simpleCalculationResult: List PlanetCalculationResult
     , complicatedCalculationResult: List PlanetCalculationResult }
 
-type alias MaybeCalculationResult = Maybe CalculationResult
+type alias FullCalculationResult =
+    { result: CalculationResult
+    , reverseResult: CalculationResult }
+
+type alias MaybeCalculationResult = Maybe FullCalculationResult
 
 type alias Model =
     { personInput1: PersonInput
@@ -52,8 +60,8 @@ type alias Model =
 
 init : Model
 init =
-    { personInput1 = List.map (\e -> defaultPersonInputLine e) planets
-    , personInput2 = List.map (\e -> defaultPersonInputLine e) planets
+    { personInput1 = PersonInput "Person1" ""  ""(List.map (\e -> defaultPersonInputLine e) planets)
+    , personInput2 = PersonInput "Person2" "" "" (List.map (\e -> defaultPersonInputLine e) planets)
     , limit = 6
     , language = Ru
     , result = Nothing }
@@ -68,6 +76,9 @@ type Msg =
     DegreeUpdate Person Planet Int
     | MinuteUpdate Person Planet Int
     | SignUpdate Person Planet Sign
+    | NameUpdate Person String
+    | BirthDateUpdate Person String
+    | BirthPlaceUpdate Person String
     | LimitUpdate Int
     | LanguageUpdate Language
     | Calculate
@@ -80,9 +91,15 @@ update msg model =
             updateForPerson model  person (\a -> handleMinuteUpdate a planet value)
         SignUpdate person planet sign ->
             updateForPerson model person (\a -> handleSignUpdate a planet sign)
+        NameUpdate person value ->
+            updateForPerson model person (\a -> {a | name = value})
+        BirthDateUpdate person value ->
+                    updateForPerson model person (\a -> {a | birthDate = value})
+        BirthPlaceUpdate person value ->
+                            updateForPerson model person (\a -> {a | birthPlace = value})
         LimitUpdate value -> {model | limit = value}
         LanguageUpdate value -> {model | language = value}
-        Calculate -> updateForResult model calculateResult
+        Calculate -> updateForResult model calculateFullResult
 
 updateForPerson: Model -> Person -> (PersonInput -> PersonInput) -> Model
 updateForPerson model person updateFunc =
@@ -93,7 +110,8 @@ updateForPerson model person updateFunc =
 
 updateForPlanet: PersonInput -> Planet -> (PersonInputLine -> PersonInputLine) -> PersonInput
 updateForPlanet personInput planet updateFunc =
-    List.map (\a -> if(a.planet == planet) then (updateFunc a) else a) personInput
+    { personInput | values =
+        List.map (\a -> if(a.planet == planet) then (updateFunc a) else a) personInput.values }
 
 updateForResult: Model -> (Model -> MaybeCalculationResult) -> Model
 updateForResult model updateFunc =
@@ -111,21 +129,29 @@ handleSignUpdate: PersonInput -> Planet -> Sign -> PersonInput
 handleSignUpdate personInput planet value =
     updateForPlanet personInput planet (\a -> {a | sign = value})
 
-calculateResult: Model -> MaybeCalculationResult
-calculateResult model =
-    Just (CalculationResult (calculateResultHelper model False) (calculateResultHelper model True))
+calculateFullResult: Model -> MaybeCalculationResult
+calculateFullResult model =
+    Just (FullCalculationResult
+        (calculateResult model.personInput1 model.personInput2 model.limit)
+        (calculateResult model.personInput2 model.personInput1 model.limit))
 
-calculateResultHelper: Model -> Bool -> (List PlanetCalculationResult)
-calculateResultHelper model withPrecision =
+calculateResult: PersonInput -> PersonInput -> Int -> CalculationResult
+calculateResult personInput1 personInput2 limit =
+    CalculationResult
+        (calculateResultHelper personInput1 personInput2  limit False)
+        (calculateResultHelper personInput1 personInput2  limit True)
+
+calculateResultHelper: PersonInput -> PersonInput -> Int -> Bool -> (List PlanetCalculationResult)
+calculateResultHelper personInput1 personInput2 limit withPrecision =
     List.map
         (\a ->
             PlanetCalculationResult
             a.planet
             (List.map (\b ->
-                CalculationResultLine b.planet (calculateRelation a b (calculatePrecision withPrecision model.limit ))
-            ) model.personInput2)
+                CalculationResultLine b.planet (calculateRelation a b (calculatePrecision withPrecision limit ))
+            ) personInput2.values)
         )
-        model.personInput1
+        personInput1.values
 
 calculateRelation: PersonInputLine -> PersonInputLine -> (PersonInputLine -> PersonInputLine -> Bool) -> Aspect
 calculateRelation personInput1 personInput2 withPrecision =
@@ -224,12 +250,12 @@ signSelect personInputLine onSelect trans =
 
 numericInput: Int -> Int -> (Maybe Int -> Msg) -> Html Msg
 numericInput value maxValue onChange =
-    Input.Number.input
+    ExtraInput.input
       { onInput = onChange
       , maxLength = Nothing
       , minValue = Just 0
       , maxValue = Just maxValue
-      , hasFocus = Nothing} [] (Just value)
+      , hasFocus = Nothing } [] (Just value)
 
 
 personInputLineView: PersonInputLine -> Person -> Translate -> Html Msg
@@ -241,18 +267,38 @@ personInputLineView personInputLine person trans =
       , td [] [numericInput personInputLine.minute 60 (\a -> MinuteUpdate person personInputLine.planet (handleIntInput a))]
     ]
 
-personInputView: PersonInput -> Person -> Translate -> Html Msg
-personInputView personInput person trans =
+nameInput: String -> Translate -> (String -> Msg) -> Html Msg
+nameInput name trans onChange =
     div []
-        [ span[] [text (person |> toString |> trans)]
-        , table []
+        [ label [][text ((trans "Name") ++ ":")]
+        , Html.input [ value name, onInput onChange] [] ]
+
+birthDateInput: String -> Translate -> (String -> Msg) -> Html Msg
+birthDateInput datetime trans onChange =
+    div [marginTop "5px"]
+        [ label [][text ((trans "Birthday") ++ ":")]
+        , Html.input [ value datetime, onInput onChange] []]
+
+birthPlaceInput: String -> Translate -> (String -> Msg) -> Html Msg
+birthPlaceInput name trans onChange =
+    div [marginTop "5px"]
+        [ label [][text ((trans "Birthplace") ++ ":")]
+        , Html.input [ value name, onInput onChange] [] ]
+
+personInputView: PersonInput -> Person -> Translate -> List (Html Msg)
+personInputView personInput person trans =
+    [div []
+            [ nameInput personInput.name trans (\a -> NameUpdate person a)
+            , birthDateInput personInput.birthDate trans (\a -> BirthDateUpdate person a)
+            , birthPlaceInput personInput.birthPlace trans (\a -> BirthPlaceUpdate person a) ]
+        , table inputTableStyle
           ([ tr[]
               [ th[] [text (trans "Planet")]
               , th[] [text (trans "Sign")]
               , th[] [text (trans "Degree")]
               , th[] [text (trans "Minute")]
               ]
-          ] ++ List.map (\a -> personInputLineView a person trans) personInput)]
+          ] ++ List.map (\a -> personInputLineView a person trans) personInput.values)]
 
 complicatedSecondaryFilter: Planet -> CalculationResultLine -> Bool
 complicatedSecondaryFilter parentPlanet calcLine =
@@ -284,25 +330,46 @@ simpleSecondaryFilter: (List Planet) -> Planet -> CalculationResultLine -> Bool
 simpleSecondaryFilter list _ calcLine =
     List.member calcLine.planet list
 
+personHeaderView: PersonInput -> PersonInput -> Html Msg
+personHeaderView person1 person2 =
+    div personHeaderViewStyle
+        [ personDataView person1
+        , personDataView person2 ]
 
-maybeResultView: MaybeCalculationResult -> Translate -> List (Html Msg)
-maybeResultView result trans =
-    case result of
-        Nothing -> [span [] [text (trans "Press calculate to show result")]]
+personDataView: PersonInput -> Html Msg
+personDataView person1 =
+    div flexColumn
+        [ h2 [] [text person1.name]
+        , span [] [text person1.birthPlace]
+        , span [] [text person1.birthDate]]
+
+maybeResultView: Model -> Translate -> Html Msg
+maybeResultView model trans =
+    case model.result of
+        Nothing -> span [] [text (trans "Press calculate to show result")]
         Just value ->
-            [ div calculateResultRowStyle [
-                h2 [] [text (trans "Simple Synastry")]
-                , resultView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter trans
-                , h2 [] [text (trans "Resonance")]
-                , resultView value.complicatedCalculationResult (trans "Physiology") [Sun, Mars] (simpleSecondaryFilter [Venus, Moon]) trans
-                , resultView value.complicatedCalculationResult (trans "Gender") [Venus, Moon] (simpleSecondaryFilter [Sun, Mars]) trans
-                , resultView value.complicatedCalculationResult (trans "Psychology") [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon]) trans ]
-            , div calculateResultRowStyle [resultView value.complicatedCalculationResult (trans "Conflict") [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter trans
-            , resultView value.complicatedCalculationResult (trans "Perspective") [Sun, Venus, Moon] perspectiveSecondaryFilter trans
-            , resultView value.complicatedCalculationResult (trans "Contact") [Mercury] (simpleSecondaryFilter [Mercury]) trans] ]
+            div []
+                [personHeaderView model.personInput1 model.personInput2
+                , div flexSpaceAround
+                    [ resultView value.result trans
+                      , resultView value.reverseResult trans] ]
 
-resultView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Translate -> Html Msg
-resultView list title mainPlanetFilter secondaryPlanetFilterFunc trans =
+resultView: CalculationResult -> Translate -> Html Msg
+resultView value  trans =
+    div calculateResultContainerStyle
+        [ h2 [] [text (trans "Simple Synastry")]
+        , resultPartView value.simpleCalculationResult "" [Moon, Venus, Mercury] complicatedSecondaryFilter trans
+        , h2 [] [text (trans "Resonance")]
+        , resultPartView value.complicatedCalculationResult (trans "Physiology") [Sun, Mars] (simpleSecondaryFilter [Venus, Moon]) trans
+        , resultPartView value.complicatedCalculationResult (trans "Gender") [Venus, Moon] (simpleSecondaryFilter [Sun, Mars]) trans
+        , resultPartView value.complicatedCalculationResult (trans "Psychology") [Sun, Venus, Moon] (simpleSecondaryFilter [Sun, Venus, Moon]) trans
+        , div [class "only-print", marginTop "40px"] []
+        , resultPartView value.complicatedCalculationResult (trans "Conflict") [Pluto, Saturn, Jupiter, Mars] conflictSecondaryFilter trans
+        , resultPartView value.complicatedCalculationResult (trans "Perspective") [Sun, Venus, Moon] perspectiveSecondaryFilter trans
+        , resultPartView value.complicatedCalculationResult (trans "Contact") [Mercury] (simpleSecondaryFilter [Mercury]) trans]
+
+resultPartView: (List PlanetCalculationResult) -> String -> (List Planet) -> (Planet -> CalculationResultLine -> Bool) -> Translate -> Html Msg
+resultPartView list title mainPlanetFilter secondaryPlanetFilterFunc trans =
     div []
         [ h4 [] [text title]
         , table tableElemStyle
@@ -342,7 +409,7 @@ toolbarView model trans =
 
 limitSelectionView: Int -> Translate -> Html Msg
 limitSelectionView limit trans =
-    div toolbarRowStyle [
+    div ((marginLeft "5px") :: toolbarRowStyle) [
         label [] [text ((trans "Limit") ++ ":")]
         , select [ onInput (\a -> LimitUpdate (handleIntInput (toInt a))) ]
             (List.map (\a -> option [Attributes.selected (a == limit), Attributes.value (toString a)]
@@ -364,9 +431,10 @@ view model =
     div parentContainerStyle
     [ div (noPrintContainerStyle ++ [id "no-print"]) [toolbarView model translateFunc
     , div personInputContainerStyle
-        [ div personInputTableStyle [(personInputView model.personInput1 Person1 translateFunc)]
-        , div personInputTableStyle [(personInputView model.personInput2 Person2 translateFunc)]]
+        [ div personInputTableStyle (personInputView model.personInput1 Person1 translateFunc)
+        , div personInputTableStyle (personInputView model.personInput2 Person2 translateFunc)]
     , button (calculateButtonStyle ++ [onClick Calculate]) [text (translateFunc "Calculate")]]
-    , div calculateResultContainerStyle (maybeResultView model.result translateFunc)
+    , div []
+        [maybeResultView model translateFunc]
     ]
 
